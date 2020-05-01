@@ -13,9 +13,9 @@ public interface Bindings {
 
     @Input(SENSOR_DATA)
     // TODO: use timestamp key
-    KStream<Byte[], SensorData> sensorData();
+    KStream<String, String> sensorData();
 
     @Output(ACTIVITIES)
     // TODO: use timestamp key
-    KStream<Byte[], SensorData> activities();
+    KStream<String, String> activities();
 }

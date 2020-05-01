@@ -11,6 +11,8 @@ import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
+
 @EnableBinding(Bindings.class)
 @Component
 @RequiredArgsConstructor
@@ -21,13 +23,26 @@ public class SensorDataHandler {
 
     @StreamListener(Bindings.SENSOR_DATA)
     @SendTo(Bindings.ACTIVITIES)
-    public KStream<Byte[], Byte[]> handlePropartFeedback(KStream<Byte[], Byte[]> sensorDataStream) {
+    public KStream<String, String> process(KStream<String, String> sensorDataStream) {
 
         // TODO: implement activity recognition logic
 
-        log.info("Retrieved message from input binding '" + Bindings.SENSOR_DATA +
-                "', forwarding to output binding '" + Bindings.ACTIVITIES + "'.");
+        return sensorDataStream.mapValues((readOnlyKey, value) -> {
+                log.info("Retrieved message from input binding '" + Bindings.SENSOR_DATA +
+                        "', forwarding to output binding '" + Bindings.ACTIVITIES + "'.");
 
-        return sensorDataStream;
+
+            char[] chars = value.toCharArray();
+            char[] newChars = new char[chars.length];
+
+            for (int i = 0; i < chars.length; i++) {
+                char curChar = chars[i];
+                newChars[i]  = i % 2 == 0 ?
+                        Character.toLowerCase(curChar)
+                        : Character.toUpperCase(curChar);
+            }
+
+            return String.valueOf(newChars);
+        });
     }
 }

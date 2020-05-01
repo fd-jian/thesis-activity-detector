@@ -31,10 +31,10 @@ spring.cloud.stream.default.consumer:
 spring.cloud.stream.kafka.streams.binder:
   brokers: ${custom.kafka.broker}
   configuration:
-    default.key.serde: org.apache.kafka.common.serialization.Serdes$ByteArraySerde
+    default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
 #    default.key.serde: org.springframework.kafka.support.serializer.JsonSerde
-#    default.value.serde: org.apache.kafka.common.serialization.Serdes$ByteArraySerde
-    default.value.serde: org.springframework.kafka.support.serializer.JsonSerde
+    default.value.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+#    default.value.serde: org.springframework.kafka.support.serializer.JsonSerde
 
 # Configure the bindings
 spring.cloud.stream.bindings:
@@ -42,3 +42,7 @@ spring.cloud.stream.bindings:
     destination: ${custom.kafka.topics.names.sensor-data}
   activities:
     destination: ${custom.kafka.topics.names.activities}
+
+spring.cloud.stream.kafka.streams.bindings:
+  sensor-data:
+    consumer.application-id: activity-detector-sensor-data

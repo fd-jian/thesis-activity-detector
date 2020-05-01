@@ -1,7 +1,0 @@
-#spring:
-## TODO: purpose of application.name? already defined in settings.gradle
-#  application:
-#    name: rechnung-service
-## TODO: necessary to allow definition overriding? (duplicate beans defined, e.g. for use of qualifiers.)
-#  main:
-#    allow-bean-definition-overriding: true

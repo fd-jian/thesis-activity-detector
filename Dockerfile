@@ -1,7 +1,14 @@
+FROM gradle:6.3-jdk13 as builder
+WORKDIR /project
+COPY . /project/
+# TODO: why root user??
+USER root
+RUN gradle build -x test
+
 # todo: find lightweight image
 FROM openjdk:13-jdk
 
-COPY build/libs/activity-detector.jar /opt/
+COPY --from=builder /project/build/libs/activity-detector.jar /opt/
 
 ENV SPRING_PROFILES_ACTIVE=snapshot
 EXPOSE 8080

@@ -64,23 +64,12 @@ dependencyManagement {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
 
-    // db
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    runtime 'org.postgresql:postgresql:42.2+'
-    implementation 'com.h2database:h2'
-    // db auditing
-    compile 'org.javers:javers-spring-boot-starter-sql:5.3.6'
-
     // kafka
     implementation 'org.springframework.cloud:spring-cloud-stream'
     implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka'
     implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka-streams'
     testImplementation 'org.springframework.cloud:spring-cloud-stream-test-support'
     testImplementation 'org.apache.kafka:kafka-streams-test-utils'
-
-    // Swagger
-    implementation 'io.springfox:springfox-swagger2:2.9.2'
-    implementation 'io.springfox:springfox-swagger-ui:2.9.2'
 
     //  Mapstruct
     implementation "org.mapstruct:mapstruct-jdk8:${mapstructVersion}"

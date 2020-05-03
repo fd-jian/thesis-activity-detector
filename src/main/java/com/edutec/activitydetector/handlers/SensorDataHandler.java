@@ -1,7 +1,6 @@
 package com.edutec.activitydetector.handlers;
 
 import com.edutec.activitydetector.bindings.Bindings;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.logging.log4j.LogManager;

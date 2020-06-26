@@ -1,4 +1,15 @@
+buildscript {
+    ext {
+        avroVersion = '0.20.0'
+    }
+
+    dependencies {
+        classpath "com.commercehub.gradle.plugin:gradle-avro-plugin:${avroVersion}"
+    }
+}
+
 plugins {
+    id "com.commercehub.gradle.plugin.avro" version "${avroVersion}"
     id 'org.springframework.boot' version '2.2.6.RELEASE'
     id 'io.spring.dependency-management' version '1.0.9.RELEASE'
     id 'java'
@@ -6,8 +17,25 @@ plugins {
 }
 
 group = 'com.edutec'
-sourceCompatibility = 13
-targetCompatibility = 13
+sourceCompatibility = 14
+targetCompatibility = 14
+
+ext {
+    springCloudVersion = 'Hoxton.SR4'
+    mapstructVersion = '1.2.0.Final'    // MUST be 1.2.0.Final! Disabling builders did not work for me with 1.3.0.Final
+                                        // src/resources/META-INF/services was ignored. Gradle/Spring boot issue?
+                                        // Tried to follow the hint in the last paragraph of the reference documentation:
+                                        // https://mapstruct.org/documentation/stable/reference/html/#mapping-with-builders
+    lombokVersion = '1.18.10'
+}
+
+repositories {
+    jcenter()
+    mavenCentral()
+    maven {
+        url  "https://packages.confluent.io/maven/"
+    }
+}
 
 configurations {
     //compile.exclude module: 'spring-boot-starter-logging' // to inhibit the being stuck with h2 tests as in vertrag
@@ -23,18 +51,6 @@ configurations {
     }
 }
 
-repositories {
-    mavenCentral()
-}
-
-ext {
-    springCloudVersion = 'Hoxton.SR4'
-    mapstructVersion = '1.2.0.Final'    // MUST be 1.2.0.Final! Disabling builders did not work for me with 1.3.0.Final
-                                        // src/resources/META-INF/services was ignored. Gradle/Spring boot issue?
-                                        // Tried to follow the hint in the last paragraph of the reference documentation:
-                                        // https://mapstruct.org/documentation/stable/reference/html/#mapping-with-builders
-    lombokVersion = '1.18.10'
-}
 
 compileTestJava {
     options.encoding = 'UTF-8'
@@ -68,6 +84,8 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-stream'
     implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka'
     implementation 'org.springframework.cloud:spring-cloud-stream-binder-kafka-streams'
+    implementation 'io.confluent:kafka-streams-avro-serde:5.5.0'
+    //implementation 'org.apache.avro:avro:1.9.2'
     testImplementation 'org.springframework.cloud:spring-cloud-stream-test-support'
     testImplementation 'org.apache.kafka:kafka-streams-test-utils'
 

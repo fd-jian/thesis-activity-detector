@@ -1,4 +1,4 @@
-FROM gradle:6.3-jdk13 as builder
+FROM gradle:6.3-jdk14 as builder
 WORKDIR /project
 COPY . /project/
 # TODO: why root user??
@@ -6,7 +6,7 @@ USER root
 RUN gradle build -x test
 
 # todo: find lightweight image
-FROM openjdk:13-jdk
+FROM openjdk:14-jdk
 
 COPY --from=builder /project/build/libs/activity-detector.jar /opt/
 

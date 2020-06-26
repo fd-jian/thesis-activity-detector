@@ -22,12 +22,12 @@ spring.cloud.stream.default.consumer:
 # Configure the kafka streams binder to consume messages
 spring.cloud.stream.kafka.streams.binder:
   brokers: ${custom.kafka.broker}
-#  configuration:
+  configuration:
 # TODO: use native encoding (is it used already?)
-#    schema.registry.url: http://schema-registry:8081
-#    default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+    default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
 #    default.key.serde: org.springframework.kafka.support.serializer.JsonSerde
-#    default.value.serde: io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
+    default.value.serde: io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
+    schema.registry.url: http://schema-registry:8081
 #    default.value.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
 #    default.value.serde: com.edutec.activitydetector.AccelerometerSerde
 #    default.value.serde: org.springframework.kafka.support.serializer.JsonSerde

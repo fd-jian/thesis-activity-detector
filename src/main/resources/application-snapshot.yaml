@@ -7,7 +7,7 @@ custom:
       separator: ""
       names:
         activities: activities
-        sensor-data: mqtt
+        sensor-data: accelerometer
 
 # Native Encoding enables the kafka serialization/deserialization
 spring.cloud.stream.default.producer:
@@ -31,6 +31,7 @@ spring.cloud.stream.kafka.streams.binder:
 #    default.value.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
 #    default.value.serde: com.edutec.activitydetector.AccelerometerSerde
 #    default.value.serde: org.springframework.kafka.support.serializer.JsonSerde
+    cache.max.bytes.buffering: 0
 
 spring.cloud.stream.bindings.input.contentType: application/json
 spring.cloud.stream.bindings.input.consumer.useNativeDecoding: true

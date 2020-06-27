@@ -1,15 +1,18 @@
 buildscript {
     ext {
         avroVersion = '0.20.0'
+        avroRegistryVersion = '0.9.0'
     }
 
     dependencies {
         classpath "com.commercehub.gradle.plugin:gradle-avro-plugin:${avroVersion}"
+        classpath "com.github.imflog:kafka-schema-registry-gradle-plugin:${avroRegistryVersion}"
     }
 }
 
 plugins {
     id "com.commercehub.gradle.plugin.avro" version "${avroVersion}"
+    id "com.github.imflog.kafka-schema-registry-gradle-plugin" version "0.9.0"
     id 'org.springframework.boot' version '2.2.6.RELEASE'
     id 'io.spring.dependency-management' version '1.0.9.RELEASE'
     id 'java'
@@ -112,4 +115,20 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+schemaRegistry {
+    url = 'http://localhost:8081/'
+    credentials {
+//        username = 'basicauthentication-username'
+//        password = 'basicauthentication-password'
+    } //optional
+
+    register {
+        subject('activities-value', 'src/main/avro/values/count-sum-avg.avsc')
+    }
+
+    download {
+        subject('accelerometer-value', 'src/main/avro/values/accelerometer.avsc')
+    }
 }

@@ -1,0 +1,10 @@
+{
+  "namespace": "com.edutec.activitydetector.countsum",
+    "type": "record",
+    "name": "CountSumTime",
+    "fields": [
+      {"name": "count", "type": "long"},
+      {"name": "timeSumSec",  "type": "float"},
+      {"name": "prevTime",  "type": "long"}
+    ]
+}

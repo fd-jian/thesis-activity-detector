@@ -7,7 +7,7 @@ custom:
       separator: ""
       names:
         activities: activities
-        sensor-data: mqtt
+        sensor-data: accelerometer
 
 # Native Encoding enables the kafka serialization/deserialization
 spring.cloud.stream.default.producer:

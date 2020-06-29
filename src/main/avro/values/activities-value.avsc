@@ -1,0 +1,15 @@
+{
+  "type" : "record",
+  "name" : "CountSumTimeAverage",
+  "namespace" : "com.edutec.activitydetector.countsum",
+  "fields" : [ {
+    "name" : "count",
+    "type" : "long"
+  }, {
+    "name" : "timeSumSec",
+    "type" : "float"
+  }, {
+    "name" : "countPerSecond",
+    "type" : "float"
+  } ]
+}

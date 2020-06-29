@@ -1,5 +1,6 @@
 package com.edutec.activitydetector.bindings;
 
+import com.edutec.activitydetector.countsum.CountSumTimeAverage;
 import com.edutec.activitydetector.model.AccelerometerRecord;
 import org.apache.kafka.streams.kstream.KStream;
 import org.springframework.cloud.stream.annotation.Input;
@@ -16,5 +17,5 @@ public interface Bindings {
 
     @Output(ACTIVITIES)
     // TODO: use user id key
-    KStream<String, String> activities();
+    KStream<String, CountSumTimeAverage> activities();
 }

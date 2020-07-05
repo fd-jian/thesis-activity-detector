@@ -4,6 +4,7 @@ import com.edutec.activitydetector.bindings.Bindings;
 import com.edutec.activitydetector.countsum.CountSumTime;
 import com.edutec.activitydetector.countsum.CountSumTimeAverage;
 import com.edutec.activitydetector.model.AccelerometerRecord;
+import com.edutec.activitydetector.model.AccelerometerRecordRounded;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.logging.log4j.LogManager;
@@ -13,7 +14,9 @@ import org.springframework.cloud.stream.annotation.StreamListener;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Component;
 
+import java.text.DecimalFormat;
 import java.time.Instant;
+import java.util.function.Function;
 
 @EnableBinding(Bindings.class)
 @Component
@@ -50,6 +53,28 @@ public class SensorDataHandler {
                     return aggregate;
                 }).mapValues(this::newCountSumTimeAverage).toStream();
 
+    }
+
+    @StreamListener(Bindings.SENSOR_DATA2)
+    @SendTo(Bindings.SENSOR_DATA_ROUNDED)
+    public KStream<String, AccelerometerRecordRounded> processRounded(KStream<String, AccelerometerRecord> sensorDataStream) {
+
+        // TODO: implement activity recognition logic
+
+        return sensorDataStream.mapValues((readOnlyKey, value) -> {
+            log.info("Retrieved message from input binding '" + Bindings.SENSOR_DATA +
+                    "', forwarding to output binding '" + Bindings.ACTIVITIES + "'.");
+
+            final DecimalFormat decimalFormat = new DecimalFormat(" #,#0.000000;-#");
+
+            Function<Float, String> round = (f) ->
+                    decimalFormat.format(Math.round(f * 1000000) / (float) 1000000);
+
+            return new AccelerometerRecordRounded(value.getTime(),
+                    round.apply(value.getX()),
+                    round.apply(value.getY()),
+                    round.apply(value.getZ()));
+        });
     }
 
     private CountSumTimeAverage newCountSumTimeAverage(CountSumTime value) {

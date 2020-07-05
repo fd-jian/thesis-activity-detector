@@ -8,6 +8,7 @@ custom:
       names:
         activities: activities
         sensor-data: accelerometer
+        sensor-data-rounded: accelerometer-rounded
 
 # Native Encoding enables the kafka serialization/deserialization
 spring.cloud.stream.default.producer:
@@ -34,7 +35,7 @@ spring.cloud.stream.kafka.streams.binder:
 #    default.value.serde: org.springframework.kafka.support.serializer.JsonSerde
     cache.max.bytes.buffering: 0
 
-spring.cloud.stream.bindings.input.contentType: application/json
+spring.cloud.stream.bindings.input.contentType: application/*+avro
 spring.cloud.stream.bindings.input.consumer.useNativeDecoding: true
 spring.cloud.stream.bindings.output.producer.useNativeEncoding: true
 
@@ -44,6 +45,10 @@ spring.cloud.stream.bindings:
     destination: ${custom.kafka.topics.names.sensor-data}
   activities:
     destination: ${custom.kafka.topics.names.activities}
+  sensor-data2:
+    destination: ${custom.kafka.topics.names.sensor-data}
+  sensor-data-rounded:
+    destination: ${custom.kafka.topics.names.sensor-data-rounded}
 
 spring.cloud.stream.kafka.streams.bindings:
   sensor-data:

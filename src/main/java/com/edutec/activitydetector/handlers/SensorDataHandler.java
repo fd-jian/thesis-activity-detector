@@ -26,6 +26,21 @@ public class SensorDataHandler {
 //    private final ObjectMapper mapper;
     Logger log = LogManager.getLogger();
 
+    private final DecimalFormat dfSensor = new DecimalFormat(" #,#00.000000;-#");
+    private final DecimalFormat dfTimeSec = new DecimalFormat("#000.00");
+
+    private final Function<Float, Float> roundSensor = (f) ->
+            Math.round(f * 100000000L) / (float) 100000000L;
+
+    private final Function<Float, Float> roundTime = (f) ->
+            Math.round(f * 100) / (float) 100;
+
+    private final Function<Float, String> roundAndFormatSensor = (f) ->
+            dfSensor.format(roundSensor.apply(f));
+
+    private final Function<Float, String> roundAndFormatTime = (f) ->
+            dfTimeSec.format(roundTime.apply(f));
+
     @StreamListener(Bindings.SENSOR_DATA)
     @SendTo(Bindings.ACTIVITIES)
     public KStream<String, CountSumTimeAverage> process(KStream<String, AccelerometerRecord> sensorDataStream) {
@@ -38,17 +53,18 @@ public class SensorDataHandler {
 
             return value;
         }).groupByKey().aggregate(
-                () -> new CountSumTime(0L, 0F, Instant.now().toEpochMilli()),
+                () -> new CountSumTime(0L, roundAndFormatTime.apply(0F), Instant.now().toEpochMilli()),
                 (key, value, aggregate) -> {
                     long currentTime = Instant.now().toEpochMilli();
                     float sinceLast = (currentTime - aggregate.getPrevTime()) / (float) 1000;
                     aggregate.setPrevTime(currentTime);
                     if(sinceLast < 15) {
                         aggregate.setCount(aggregate.getCount() + 1);
-                        aggregate.setTimeSumSec(aggregate.getTimeSumSec() + sinceLast);
+                        aggregate.setTimeSumSec(roundAndFormatTime.apply(
+                                Float.parseFloat(aggregate.getTimeSumSec()) + sinceLast));
                     } else {
                         aggregate.setCount(0L);
-                        aggregate.setTimeSumSec(0F);
+                        aggregate.setTimeSumSec(roundAndFormatTime.apply(0F));
                     }
                     return aggregate;
                 }).mapValues(this::newCountSumTimeAverage).toStream();
@@ -65,25 +81,21 @@ public class SensorDataHandler {
             log.info("Retrieved message from input binding '" + Bindings.SENSOR_DATA +
                     "', forwarding to output binding '" + Bindings.ACTIVITIES + "'.");
 
-            final DecimalFormat decimalFormat = new DecimalFormat(" #,#0.000000;-#");
-
-            Function<Float, String> round = (f) ->
-                    decimalFormat.format(Math.round(f * 1000000) / (float) 1000000);
-
             return new AccelerometerRecordRounded(value.getTime(),
-                    round.apply(value.getX()),
-                    round.apply(value.getY()),
-                    round.apply(value.getZ()));
+                    roundAndFormatSensor.apply(value.getX()),
+                    roundAndFormatSensor.apply(value.getY()),
+                    roundAndFormatSensor.apply(value.getZ()));
         });
+
     }
 
     private CountSumTimeAverage newCountSumTimeAverage(CountSumTime value) {
         final long count = value.getCount();
-        final float timeSumSec = value.getTimeSumSec();
+        final float timeSumSec = Float.parseFloat(value.getTimeSumSec());
         return new CountSumTimeAverage(
                 count,
-                timeSumSec,
-                (float) count / timeSumSec);
+                roundAndFormatTime.apply(timeSumSec),
+                roundAndFormatTime.apply((float) count / timeSumSec));
     }
 
 }

@@ -4,7 +4,7 @@
     "name": "CountSumTime",
     "fields": [
       {"name": "count", "type": "long"},
-      {"name": "timeSumSec",  "type": "float"},
+      {"name": "timeSumSec",  "type": "string"},
       {"name": "prevTime",  "type": "long"}
     ]
 }

@@ -7,9 +7,9 @@
     "type" : "long"
   }, {
     "name" : "timeSumSec",
-    "type" : "float"
+    "type" : "string"
   }, {
     "name" : "countPerSecond",
-    "type" : "float"
+    "type" : "string"
   } ]
 }

@@ -8,6 +8,7 @@ RUN gradle build -x test
 # todo: find lightweight image
 FROM openjdk:14-jdk
 
+#COPY build/libs/indicator-service.jar /opt
 COPY --from=builder /project/build/libs/activity-detector.jar /opt/
 
 ENV SPRING_PROFILES_ACTIVE=snapshot

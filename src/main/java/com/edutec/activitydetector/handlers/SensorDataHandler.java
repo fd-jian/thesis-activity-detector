@@ -16,6 +16,9 @@ import org.springframework.stereotype.Component;
 
 import java.text.DecimalFormat;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.function.Function;
 
 @EnableBinding(Bindings.class)
@@ -48,16 +51,22 @@ public class SensorDataHandler {
         // TODO: implement activity recognition logic
 
         return sensorDataStream.mapValues((readOnlyKey, value) -> {
-            log.info("Retrieved message from input binding '" + Bindings.SENSOR_DATA +
-                    "', forwarding to output binding '" + Bindings.ACTIVITIES + "'.");
+            //log.info("Retrieved message from input binding '" + Bindings.SENSOR_DATA +
+                    //"', forwarding to output binding '" + Bindings.ACTIVITIES + "'.");
 
             return value;
         }).groupByKey().aggregate(
-                () -> new CountSumTime(0L, roundAndFormatTime.apply(0F), Instant.now().toEpochMilli()),
+                () -> new CountSumTime(0L, roundAndFormatTime.apply(0F), "", Instant.now().toEpochMilli()),
                 (key, value, aggregate) -> {
+
+                    aggregate.setTime(DateTimeFormatter.ofPattern("hh:mm:ss:SSS")
+                            .format(ZonedDateTime.ofInstant(
+                                Instant.ofEpochMilli(value.getTime()), ZoneId.systemDefault())));
+
                     long currentTime = Instant.now().toEpochMilli();
                     float sinceLast = (currentTime - aggregate.getPrevTime()) / (float) 1000;
                     aggregate.setPrevTime(currentTime);
+
                     if(sinceLast < 15) {
                         aggregate.setCount(aggregate.getCount() + 1);
                         aggregate.setTimeSumSec(roundAndFormatTime.apply(
@@ -66,6 +75,7 @@ public class SensorDataHandler {
                         aggregate.setCount(0L);
                         aggregate.setTimeSumSec(roundAndFormatTime.apply(0F));
                     }
+
                     return aggregate;
                 }).mapValues(this::newCountSumTimeAverage).toStream();
 
@@ -78,8 +88,8 @@ public class SensorDataHandler {
         // TODO: implement activity recognition logic
 
         return sensorDataStream.mapValues((readOnlyKey, value) -> {
-            log.info("Retrieved message from input binding '" + Bindings.SENSOR_DATA +
-                    "', forwarding to output binding '" + Bindings.ACTIVITIES + "'.");
+            //log.info("Retrieved message from input binding '" + Bindings.SENSOR_DATA +
+                    //"', forwarding to output binding '" + Bindings.ACTIVITIES + "'.");
 
             return new AccelerometerRecordRounded(value.getTime(),
                     roundAndFormatSensor.apply(value.getX()),
@@ -94,6 +104,7 @@ public class SensorDataHandler {
         final float timeSumSec = Float.parseFloat(value.getTimeSumSec());
         return new CountSumTimeAverage(
                 count,
+                value.getTime(),
                 roundAndFormatTime.apply(timeSumSec),
                 roundAndFormatTime.apply((float) count / timeSumSec));
     }

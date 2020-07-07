@@ -5,6 +5,7 @@
     "fields": [
       {"name": "count", "type": "long"},
       {"name": "timeSumSec",  "type": "string"},
+      {"name": "time",  "type": "string"},
       {"name": "prevTime",  "type": "long"}
     ]
 }

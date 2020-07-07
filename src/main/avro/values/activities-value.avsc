@@ -6,10 +6,22 @@
     "name" : "count",
     "type" : "long"
   }, {
+    "name" : "time",
+    "type" : {
+      "type" : "string",
+      "avro.java.string" : "String"
+    }
+  }, {
     "name" : "timeSumSec",
-    "type" : "string"
+    "type" : {
+      "type" : "string",
+      "avro.java.string" : "String"
+    }
   }, {
     "name" : "countPerSecond",
-    "type" : "string"
+    "type" : {
+      "type" : "string",
+      "avro.java.string" : "String"
+    }
   } ]
 }

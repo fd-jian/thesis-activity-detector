@@ -6,13 +6,10 @@
     "name" : "time",
     "type" : "long"
   }, {
-    "name" : "x",
-    "type" : "float"
-  }, {
-    "name" : "y",
-    "type" : "float"
-  }, {
-    "name" : "z",
-    "type" : "float"
+    "name" : "values",
+    "type" : {
+      "type" : "array",
+      "items" : "float"
+    }
   } ]
 }

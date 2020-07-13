@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.function.Function;
 
 @EnableBinding(Bindings.class)
@@ -91,10 +92,11 @@ public class SensorDataHandler {
             //log.info("Retrieved message from input binding '" + Bindings.SENSOR_DATA +
                     //"', forwarding to output binding '" + Bindings.ACTIVITIES + "'.");
 
+            Float[] values = value.getValues().toArray(new Float[0]);
             return new AccelerometerRecordRounded(value.getTime(),
-                    roundAndFormatSensor.apply(value.getX()),
-                    roundAndFormatSensor.apply(value.getY()),
-                    roundAndFormatSensor.apply(value.getZ()));
+                    roundAndFormatSensor.apply(values[0]),
+                    roundAndFormatSensor.apply(values[1]),
+                    roundAndFormatSensor.apply(values[2]));
         });
 
     }

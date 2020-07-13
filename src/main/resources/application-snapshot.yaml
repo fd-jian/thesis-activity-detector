@@ -7,8 +7,8 @@ custom:
       separator: ""
       names:
         activities: activities
-        sensor-data: accelerometer
-        sensor-data-rounded: accelerometer-rounded
+        sensor-data: linear_acceleration
+        sensor-data-rounded: linear_acceleration-rounded
 
 # Native Encoding enables the kafka serialization/deserialization
 spring.cloud.stream.default.producer:
@@ -17,14 +17,10 @@ spring.cloud.stream.default.producer:
 spring.cloud.stream.default.consumer:
   useNativeEncoding: true
 
-#TODO: figure out how to handle different types. maybe use connector to stream in format <key: timestamp, value: json>
-#TODO:    so that the bindings can be configured for a single serializer/deserializer for all streams.
-
 # Configure the kafka streams binder to consume messages
 spring.cloud.stream.kafka.streams.binder:
   brokers: ${custom.kafka.broker}
   configuration:
-# TODO: use native encoding (is it used already?)
 #    default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
     default.key.serde: io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
 #    default.key.serde: org.springframework.kafka.support.serializer.JsonSerde

@@ -21,6 +21,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @EnableBinding(Bindings.class)
 @Component
@@ -68,7 +70,7 @@ public class SensorDataHandler {
                     float sinceLast = (currentTime - aggregate.getPrevTime()) / (float) 1000;
                     aggregate.setPrevTime(currentTime);
 
-                    if(sinceLast < 15) {
+                    if(sinceLast < 5) {
                         aggregate.setCount(aggregate.getCount() + 1);
                         aggregate.setTimeSumSec(roundAndFormatTime.apply(
                                 Float.parseFloat(aggregate.getTimeSumSec()) + sinceLast));
@@ -93,10 +95,16 @@ public class SensorDataHandler {
                     //"', forwarding to output binding '" + Bindings.ACTIVITIES + "'.");
 
             Float[] values = value.getValues().toArray(new Float[0]);
+            Float[] valuesFull = IntStream.range(0, 4).mapToObj(value1 -> {
+               if (values.length > value1)
+                   return values[value1];
+               else return 0F;
+            }).collect(Collectors.toList()).toArray(new Float[0]);
+
             return new AccelerometerRecordRounded(value.getTime(),
-                    roundAndFormatSensor.apply(values[0]),
-                    roundAndFormatSensor.apply(values[1]),
-                    roundAndFormatSensor.apply(values[2]));
+                    roundAndFormatSensor.apply(valuesFull[0]),
+                    roundAndFormatSensor.apply(valuesFull[1]),
+                    roundAndFormatSensor.apply(valuesFull[2]));
         });
 
     }

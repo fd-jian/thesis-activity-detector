@@ -1,10 +1,10 @@
-package com.edutec.activitydetector.handlers;
+package de.dipf.edutec.thriller.experiencesampling.detector.handlers;
 
-import com.edutec.activitydetector.bindings.Bindings;
-import com.edutec.activitydetector.countsum.CountSumTime;
-import com.edutec.activitydetector.countsum.CountSumTimeAverage;
-import com.edutec.activitydetector.model.AccelerometerRecord;
-import com.edutec.activitydetector.model.AccelerometerRecordRounded;
+import de.dipf.edutec.thriller.experiencesampling.detector.bindings.Bindings;
+import de.dipf.edutec.thriller.experiencesampling.CountSumTime;
+import de.dipf.edutec.thriller.experiencesampling.SensorRecord;
+import de.dipf.edutec.thriller.experiencesampling.SensorRecordRounded;
+import de.dipf.edutec.thriller.experiencesampling.Stats;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.logging.log4j.LogManager;
@@ -19,10 +19,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @EnableBinding(Bindings.class)
 @Component
@@ -48,8 +46,8 @@ public class SensorDataHandler {
             dfTimeSec.format(roundTime.apply(f));
 
     @StreamListener(Bindings.SENSOR_DATA)
-    @SendTo(Bindings.ACTIVITIES)
-    public KStream<String, CountSumTimeAverage> process(KStream<String, AccelerometerRecord> sensorDataStream) {
+    @SendTo(Bindings.STATS)
+    public KStream<String, Stats> process(KStream<String, SensorRecord> sensorDataStream) {
 
         // TODO: implement activity recognition logic
 
@@ -59,9 +57,8 @@ public class SensorDataHandler {
 
             return value;
         }).groupByKey().aggregate(
-                () -> new CountSumTime(0L, roundAndFormatTime.apply(0F), "", Instant.now().toEpochMilli()),
+                () -> new CountSumTime(0L, roundAndFormatTime.apply(0F), "", Instant.now().toEpochMilli(), ""),
                 (key, value, aggregate) -> {
-
                     aggregate.setTime(DateTimeFormatter.ofPattern("hh:mm:ss:SSS")
                             .format(ZonedDateTime.ofInstant(
                                 Instant.ofEpochMilli(value.getTime()), ZoneId.systemDefault())));
@@ -78,45 +75,34 @@ public class SensorDataHandler {
                         aggregate.setCount(0L);
                         aggregate.setTimeSumSec(roundAndFormatTime.apply(0F));
                     }
+                    aggregate.setSessionId(value.getSessionId());
 
                     return aggregate;
                 }).mapValues(this::newCountSumTimeAverage).toStream();
-
     }
 
     @StreamListener(Bindings.SENSOR_DATA2)
     @SendTo(Bindings.SENSOR_DATA_ROUNDED)
-    public KStream<String, AccelerometerRecordRounded> processRounded(KStream<String, AccelerometerRecord> sensorDataStream) {
+    public KStream<String, SensorRecordRounded> processRounded(KStream<String, SensorRecord> sensorDataStream) {
 
         // TODO: implement activity recognition logic
 
         return sensorDataStream.mapValues((readOnlyKey, value) -> {
             //log.info("Retrieved message from input binding '" + Bindings.SENSOR_DATA +
                     //"', forwarding to output binding '" + Bindings.ACTIVITIES + "'.");
-
-            Float[] values = value.getValues().toArray(new Float[0]);
-            Float[] valuesFull = IntStream.range(0, 4).mapToObj(value1 -> {
-               if (values.length > value1)
-                   return values[value1];
-               else return 0F;
-            }).collect(Collectors.toList()).toArray(new Float[0]);
-
-            return new AccelerometerRecordRounded(value.getTime(),
-                    roundAndFormatSensor.apply(valuesFull[0]),
-                    roundAndFormatSensor.apply(valuesFull[1]),
-                    roundAndFormatSensor.apply(valuesFull[2]));
+            return new SensorRecordRounded(value.getTime(), value.getSessionId(),
+                    value.getValues().stream().map(roundAndFormatSensor).collect(Collectors.toList()));
         });
-
     }
 
-    private CountSumTimeAverage newCountSumTimeAverage(CountSumTime value) {
+    private Stats newCountSumTimeAverage(CountSumTime value) {
         final long count = value.getCount();
         final float timeSumSec = Float.parseFloat(value.getTimeSumSec());
-        return new CountSumTimeAverage(
+        return new Stats(
                 count,
                 value.getTime(),
                 roundAndFormatTime.apply(timeSumSec),
-                roundAndFormatTime.apply((float) count / timeSumSec));
+                roundAndFormatTime.apply((float) count / timeSumSec),
+                value.getSessionId());
     }
-
 }

@@ -1,0 +1,21 @@
+{
+  "type" : "record",
+  "name" : "Stats",
+  "namespace" : "de.dipf.edutec.thriller.experiencesampling",
+  "fields" : [ {
+    "name" : "count",
+    "type" : "long"
+  }, {
+    "name" : "time",
+    "type" : "string"
+  }, {
+    "name" : "timeSumSec",
+    "type" : "string"
+  }, {
+    "name" : "countPerSecond",
+    "type" : "string"
+  }, {
+    "name" : "sessionId",
+    "type" : "string"
+  } ]
+}

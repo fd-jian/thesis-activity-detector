@@ -125,20 +125,17 @@ schemaRegistry {
     } //optional
 
     register {
-//        subject('activities-key', 'src/main/avro')
-        subject('activities-value', 'src/main/avro/values')
-        subject('accelerometer-rounded-value', 'src/main/avro/values')
-//        subject('accelerometer-rounded-key', 'src/main/avro')
-        subject('mqtt-accelerometer-value', 'src/main/avro/values')
-        subject('mqtt-accelerometer-key', 'src/main/avro')
+
+        subject('stats-value', 'src/main/avro/values/stats-value.avsc')
+        subject('mqtt-sensors-rounded-value', 'src/main/avro/values/mqtt-sensors-rounded-value.avsc')
+        subject('mqtt-sensors-value', 'src/main/avro/values/mqtt-sensors-value.avsc')
+        subject('mqtt-sensors-key', 'src/main/avro/mqtt-sensors-key.avsc')
     }
 
     download {
-//        subject('activities-key', 'src/main/avro')
-        subject('activities-value', 'src/main/avro/values')
-        subject('accelerometer-rounded-value', 'src/main/avro/values')
-//        subject('accelerometer-rounded-key', 'src/main/avro')
-        subject('mqtt-accelerometer-value', 'src/main/avro/values')
-        subject('mqtt-accelerometer-key', 'src/main/avro')
+        subject('stats-value', 'src/main/avro/values')
+        subject('mqtt-sensors-rounded-value', 'src/main/avro/values')
+        subject('mqtt-sensors-value', 'src/main/avro/values')
+        subject('mqtt-sensors-key', 'src/main/avro')
     }
 }

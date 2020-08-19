@@ -1,0 +1,9 @@
+{
+  "type" : "record",
+  "name" : "UserId",
+  "namespace" : "de.dipf.edutec.thriller.experiencesampling",
+  "fields" : [ {
+      "name" : "id",
+      "type" : "string"
+    } ]
+}

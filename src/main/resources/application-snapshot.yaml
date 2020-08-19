@@ -7,8 +7,13 @@ custom:
       separator: ""
       names:
         stats: stats
-        sensor-data: linear_acceleration
-        sensor-data-rounded: linear_acceleration-rounded
+        linear-acceleration: linear_acceleration
+        accelerometer: accelerometer
+        gyroscope: gyroscope
+        light: light
+        linear-acceleration-rounded: linear_acceleration_rounded
+        all-sensors: all-sensors
+        user-ids: user-ids
 
 # Native Encoding enables the kafka serialization/deserialization
 spring:
@@ -24,24 +29,100 @@ spring:
           consumer.useNativeDecoding: true
         output:
           producer.useNativeEncoding: true
+
+        # Join all sensor topics to one aggregated topic
+        all-linear-acceleration-in:
+          destination: ${custom.kafka.topics.names.linear-acceleration}
+        all-linear-acceleration-out:
+          destination: ${custom.kafka.topics.names.all-sensors}
+
+        all-accelerometer-in:
+          destination: ${custom.kafka.topics.names.accelerometer}
+        all-accelerometer-out:
+          destination: ${custom.kafka.topics.names.all-sensors}
+
+        all-gyroscope-in:
+          destination: ${custom.kafka.topics.names.gyroscope}
+        all-gyroscope-out:
+          destination: ${custom.kafka.topics.names.all-sensors}
+
+        all-light-in:
+          destination: ${custom.kafka.topics.names.light}
+        all-light-out:
+          destination: ${custom.kafka.topics.names.all-sensors}
+
         # Configure the bindings
-        sensor-data:
-          destination: ${custom.kafka.topics.names.sensor-data}
-        stats:
+        user-ids-in:
+          destination: ${custom.kafka.topics.names.all-sensors}
+        user-ids-out:
+          destination: ${custom.kafka.topics.names.user-ids}
+
+        stats-in:
+          destination: ${custom.kafka.topics.names.all-sensors}
+        stats-out:
           destination: ${custom.kafka.topics.names.stats}
-        sensor-data2:
-          destination: ${custom.kafka.topics.names.sensor-data}
-        sensor-data-rounded:
-          destination: ${custom.kafka.topics.names.sensor-data-rounded}
+
+        linear-acceleration-rounded-in:
+          destination: ${custom.kafka.topics.names.linear-acceleration}
+        linear-acceleration-rounded-out:
+          destination: ${custom.kafka.topics.names.linear-acceleration-rounded}
+
       # Configure the kafka streams binder to consume messages
       kafka.streams:
         binder:
           brokers: ${custom.kafka.broker}
           configuration:
-            default.key.serde: io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
+#            default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+            default.key.serde: io.confluent.kafka.streams.serdes.avro.PrimitiveAvroSerde
             default.value.serde: io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
             schema.registry.url: http://schema-registry:8081
             cache.max.bytes.buffering: 0
         bindings:
-          sensor-data:
-            consumer.application-id: activity-detector-sensor-data
+          all-linear-acceleration-in:
+            consumer:
+              application-id: detector-all-linear-acceleration-in
+          all-linear-acceleration-out:
+            consumer:
+              application-id: detector-all-linear-acceleration-out
+          all-accelerometer-in:
+            consumer:
+              application-id: detector-all-accelerometer-in
+          all-accelerometer-out:
+            consumer:
+              application-id: detector-all-accelerometer-out
+          all-gyroscope-in:
+            consumer:
+              application-id: detector-all-gyroscope-in
+          all-gyroscope-out:
+            consumer:
+              application-id: detector-all-gyroscope-out
+          all-light-in:
+            consumer:
+              application-id: detector-all-light-in
+          all-light-out:
+            consumer:
+              application-id: detector-all-light-out
+          # Configure the bindings
+          user-ids-in:
+            consumer:
+              application-id: detector-user-ids-in
+          user-ids-out:
+            producer:
+#              keySerde: org.apache.kafka.common.serialization.Serdes$LongSerde
+#              keySerde: io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
+              keySerde: io.confluent.kafka.streams.serdes.avro.PrimitiveAvroSerde
+#              valueSerde: io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
+            consumer:
+              application-id: detector-user-ids-out
+          stats-in:
+            consumer:
+              application-id: detector-stats-in
+          stats-out:
+            consumer:
+              application-id: detector-stats-out
+          linear-acceleration-rounded-in:
+            consumer:
+              application-id: detector-linear-acceleration-rounded-in
+          linear-acceleration-rounded-out:
+            consumer:
+              application-id: detector-linear-acceleration-rounded-out

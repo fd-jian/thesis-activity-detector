@@ -125,14 +125,16 @@ schemaRegistry {
     } //optional
 
     register {
-
         subject('stats-value', 'src/main/avro/values/stats-value.avsc')
+        subject('user-ids-value', 'src/main/avro/values/user-ids-value.avsc')
         subject('mqtt-sensors-rounded-value', 'src/main/avro/values/mqtt-sensors-rounded-value.avsc')
         subject('mqtt-sensors-value', 'src/main/avro/values/mqtt-sensors-value.avsc')
         subject('mqtt-sensors-key', 'src/main/avro/mqtt-sensors-key.avsc')
     }
 
     download {
+        subject('stats-value', 'src/main/avro/values')
+        subject('user-ids-value', 'src/main/avro/values')
         subject('stats-value', 'src/main/avro/values')
         subject('mqtt-sensors-rounded-value', 'src/main/avro/values')
         subject('mqtt-sensors-value', 'src/main/avro/values')

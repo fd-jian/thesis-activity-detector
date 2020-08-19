@@ -1,0 +1,16 @@
+{
+  "type" : "record",
+  "name" : "UserIds",
+  "namespace" : "de.dipf.edutec.thriller.experiencesampling",
+  "fields" : [ {
+    "name" : "time",
+    "type" : "long",
+    "default" : 0
+  }, {
+    "name" : "ids",
+    "type" : {
+      "type" : "array",
+      "items" : "string"
+    }
+  } ]
+}

@@ -1,16 +1,19 @@
 package de.dipf.edutec.thriller.experiencesampling.detector.handlers;
 
+import de.dipf.edutec.thriller.experiencesampling.*;
 import de.dipf.edutec.thriller.experiencesampling.detector.bindings.Bindings;
-import de.dipf.edutec.thriller.experiencesampling.CountSumTime;
-import de.dipf.edutec.thriller.experiencesampling.SensorRecord;
-import de.dipf.edutec.thriller.experiencesampling.SensorRecordRounded;
-import de.dipf.edutec.thriller.experiencesampling.Stats;
+import io.confluent.kafka.streams.serdes.avro.PrimitiveAvroSerde;
+import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import lombok.RequiredArgsConstructor;
+import org.apache.kafka.streams.KeyValue;
+import org.apache.kafka.streams.kstream.Grouped;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.StreamListener;
+import org.springframework.cloud.stream.binder.kafka.streams.InteractiveQueryService;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Component;
 
@@ -19,9 +22,9 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @EnableBinding(Bindings.class)
 @Component
@@ -30,6 +33,8 @@ public class SensorDataHandler {
 
 //    private final ObjectMapper mapper;
     Logger log = LogManager.getLogger();
+
+    private final InteractiveQueryService interactiveQueryService;
 
     private final DecimalFormat dfSensor = new DecimalFormat(" #,#00.000000;-#");
     private final DecimalFormat dfTimeSec = new DecimalFormat("#000.00");
@@ -46,8 +51,12 @@ public class SensorDataHandler {
     private final Function<Float, String> roundAndFormatTime = (f) ->
             dfTimeSec.format(roundTime.apply(f));
 
-    @StreamListener(Bindings.SENSOR_DATA)
-    @SendTo(Bindings.STATS)
+    @Value("${spring.cloud.stream.kafka.streams.binder.configuration.schema.registry.url}")
+    private String schemaRegistryUrl;
+    private static final String SCHEMA_REGISTRY_URL_KEY = "schema.registry.url";
+
+    @StreamListener(Bindings.STATS_IN)
+    @SendTo(Bindings.STATS_OUT)
     public KStream<String, Stats> process(KStream<String, SensorRecord> sensorDataStream) {
 
         // TODO: implement activity recognition logic
@@ -82,8 +91,8 @@ public class SensorDataHandler {
                 }).mapValues(this::newCountSumTimeAverage).toStream();
     }
 
-    @StreamListener(Bindings.SENSOR_DATA2)
-    @SendTo(Bindings.SENSOR_DATA_ROUNDED)
+    @StreamListener(Bindings.LINEAR_ACCELERATION_ROUNDED_IN)
+    @SendTo(Bindings.LINEAR_ACCELERATION_ROUNDED_OUT)
     public KStream<String, SensorRecordRounded> processRounded(KStream<String, SensorRecord> sensorDataStream) {
 
         // TODO: implement activity recognition logic
@@ -94,6 +103,53 @@ public class SensorDataHandler {
             return new SensorRecordRounded(value.getTime(), value.getSessionId(),
                     value.getValues().stream().map(roundAndFormatSensor).collect(Collectors.toList()));
         });
+    }
+
+    @StreamListener(Bindings.USER_IDS_IN)
+    @SendTo(Bindings.USER_IDS_OUT)
+    public KStream<Long, UserIds> userIds(KStream<String, SensorRecord> sensorDataStream) {
+        final Map<String, String> serdeConfig = Collections.singletonMap(SCHEMA_REGISTRY_URL_KEY, schemaRegistryUrl);
+        final PrimitiveAvroSerde<Long> keySerde = new PrimitiveAvroSerde<>();
+        keySerde.configure(serdeConfig, true);
+        final SpecificAvroSerde<UserId> valueSerde = new SpecificAvroSerde<>();
+        valueSerde.configure(serdeConfig, false);
+
+        return sensorDataStream
+                .mapValues((readOnlyKey, value) -> new UserId(readOnlyKey))
+                .groupBy((key, value) -> 0L, Grouped.with(keySerde, valueSerde))
+                .aggregate(() -> new UserIds(0L, new ArrayList<>()),
+                        (key, value, aggregate) -> {
+                            Set<String> strings = new HashSet<>(aggregate.getIds());
+                            strings.add(value.getId());
+                            aggregate.setIds(new ArrayList<>(strings));
+                            aggregate.setTime(Instant.now().toEpochMilli());
+                            return aggregate;
+                }).toStream();
+    }
+
+
+    @StreamListener(Bindings.ALL_LINEAR_ACCELERATION_IN)
+    @SendTo(Bindings.ALL_LINEAR_ACCELERATION_OUT)
+    public KStream<String, SensorRecord> allLinearAcceleration(KStream<String, SensorRecord> sensorDataStream) {
+        return sensorDataStream;
+    }
+
+    @StreamListener(Bindings.ALL_ACCELEROMETER_IN)
+    @SendTo(Bindings.ALL_ACCELEROMETER_OUT)
+    public KStream<String, SensorRecord> allAccelerometer(KStream<String, SensorRecord> sensorDataStream) {
+        return sensorDataStream;
+    }
+
+    @StreamListener(Bindings.ALL_GYROSCOPE_IN)
+    @SendTo(Bindings.ALL_GYROSCOPE_OUT)
+    public KStream<String, SensorRecord> allGyroscope(KStream<String, SensorRecord> sensorDataStream) {
+        return sensorDataStream;
+    }
+
+    @StreamListener(Bindings.ALL_LIGHT_IN)
+    @SendTo(Bindings.ALL_LIGHT_OUT)
+    public KStream<String, SensorRecord> allLight(KStream<String, SensorRecord> sensorDataStream) {
+        return sensorDataStream;
     }
 
     private Stats newCountSumTimeAverage(CountSumTime value) {

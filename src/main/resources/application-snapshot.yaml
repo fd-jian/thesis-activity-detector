@@ -72,8 +72,8 @@ spring:
         binder:
           brokers: ${custom.kafka.broker}
           configuration:
-#            default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
-            default.key.serde: io.confluent.kafka.streams.serdes.avro.PrimitiveAvroSerde
+#            default.key.serde: org.apache.kafka.common.serialization.Serdes$LongSerde
+            default.key.serde: io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
             default.value.serde: io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
             schema.registry.url: http://schema-registry:8081
             cache.max.bytes.buffering: 0
@@ -109,9 +109,7 @@ spring:
           user-ids-out:
             producer:
 #              keySerde: org.apache.kafka.common.serialization.Serdes$LongSerde
-#              keySerde: io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
               keySerde: io.confluent.kafka.streams.serdes.avro.PrimitiveAvroSerde
-#              valueSerde: io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde
             consumer:
               application-id: detector-user-ids-out
           stats-in:

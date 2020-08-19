@@ -30,11 +30,8 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 public class SensorDataHandler {
-
-//    private final ObjectMapper mapper;
-    Logger log = LogManager.getLogger();
-
-    private final InteractiveQueryService interactiveQueryService;
+    private static final String SCHEMA_REGISTRY_URL_KEY = "schema.registry.url";
+    private static final Logger log = LogManager.getLogger(SensorDataHandler.class);
 
     private final DecimalFormat dfSensor = new DecimalFormat(" #,#00.000000;-#");
     private final DecimalFormat dfTimeSec = new DecimalFormat("#000.00");
@@ -53,7 +50,9 @@ public class SensorDataHandler {
 
     @Value("${spring.cloud.stream.kafka.streams.binder.configuration.schema.registry.url}")
     private String schemaRegistryUrl;
-    private static final String SCHEMA_REGISTRY_URL_KEY = "schema.registry.url";
+
+    @Value("${spring.cloud.stream.bindings.user-ids-in.destination}")
+    private String userIdsInDestination;
 
     @StreamListener(Bindings.STATS_IN)
     @SendTo(Bindings.STATS_OUT)
@@ -108,15 +107,17 @@ public class SensorDataHandler {
     @StreamListener(Bindings.USER_IDS_IN)
     @SendTo(Bindings.USER_IDS_OUT)
     public KStream<Long, UserIds> userIds(KStream<String, SensorRecord> sensorDataStream) {
-        final Map<String, String> serdeConfig = Collections.singletonMap(SCHEMA_REGISTRY_URL_KEY, schemaRegistryUrl);
-        final PrimitiveAvroSerde<Long> keySerde = new PrimitiveAvroSerde<>();
-        keySerde.configure(serdeConfig, true);
+        final Map<String, String> avroSerdeConfig = Collections.singletonMap(SCHEMA_REGISTRY_URL_KEY, schemaRegistryUrl);
+        final PrimitiveAvroSerde<Long> longKeyPrimitiveSerde = new PrimitiveAvroSerde<>();
+        longKeyPrimitiveSerde.configure(avroSerdeConfig, true);
         final SpecificAvroSerde<UserId> valueSerde = new SpecificAvroSerde<>();
-        valueSerde.configure(serdeConfig, false);
+        valueSerde.configure(avroSerdeConfig, false);
+        final PrimitiveAvroSerde<String> stringKeyPrimitiveSerde = new PrimitiveAvroSerde<>();
+        stringKeyPrimitiveSerde.configure(avroSerdeConfig, true);
 
         return sensorDataStream
-                .mapValues((readOnlyKey, value) -> new UserId(readOnlyKey))
-                .groupBy((key, value) -> 0L, Grouped.with(keySerde, valueSerde))
+                .mapValues((readOnlyKey, value) -> new UserId(stringKeyPrimitiveSerde.deserializer().deserialize(userIdsInDestination, readOnlyKey.getBytes())))
+                .groupBy((key, value) -> 0L, Grouped.with(longKeyPrimitiveSerde, valueSerde))
                 .aggregate(() -> new UserIds(0L, new ArrayList<>()),
                         (key, value, aggregate) -> {
                             Set<String> strings = new HashSet<>(aggregate.getIds());
@@ -126,7 +127,6 @@ public class SensorDataHandler {
                             return aggregate;
                 }).toStream();
     }
-
 
     @StreamListener(Bindings.ALL_LINEAR_ACCELERATION_IN)
     @SendTo(Bindings.ALL_LINEAR_ACCELERATION_OUT)
@@ -155,6 +155,7 @@ public class SensorDataHandler {
     private Stats newCountSumTimeAverage(CountSumTime value) {
         final long count = value.getCount();
         final float timeSumSec = Float.parseFloat(value.getTimeSumSec());
+
         return new Stats(
                 count,
                 value.getTime(),

@@ -1,0 +1,14 @@
+{
+  "type" : "record",
+  "name" : "UserIdsStatus",
+  "namespace" : "de.dipf.edutec.thriller.experiencesampling",
+  "fields" : [ {
+    "name": "userIds",
+    "type": "de.dipf.edutec.thriller.experiencesampling.UserIds"
+  }
+  , {
+    "name" : "changed",
+    "type" : "boolean",
+    "default": false
+  }]
+}

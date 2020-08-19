@@ -118,14 +118,31 @@ public class SensorDataHandler {
         return sensorDataStream
                 .mapValues((readOnlyKey, value) -> new UserId(stringKeyPrimitiveSerde.deserializer().deserialize(userIdsInDestination, readOnlyKey.getBytes())))
                 .groupBy((key, value) -> 0L, Grouped.with(longKeyPrimitiveSerde, valueSerde))
-                .aggregate(() -> new UserIds(0L, new ArrayList<>()),
+                .aggregate(() -> new UserIdsStatus(new UserIds(0L, new ArrayList<>()), false),
                         (key, value, aggregate) -> {
-                            Set<String> strings = new HashSet<>(aggregate.getIds());
+                            UserIds userIds = aggregate.getUserIds();
+                            Set<String> strings = new HashSet<>(userIds.getIds());
                             strings.add(value.getId());
-                            aggregate.setIds(new ArrayList<>(strings));
-                            aggregate.setTime(Instant.now().toEpochMilli());
+                            userIds.setIds(new ArrayList<>(strings));
+                            userIds.setTime(Instant.now().toEpochMilli());
                             return aggregate;
-                }).toStream();
+                }).toStream()
+                .groupByKey()
+                .aggregate(
+                        () -> new UserIdsStatus(new UserIds(0L, new ArrayList<>()), true),
+                        (key, value, aggregate) -> {
+                            if (!new HashSet<>(aggregate.getUserIds().getIds())
+                                    .equals(new HashSet<>(value.getUserIds().getIds()))) {
+                               value.setChanged(true);
+                           }
+                            return value;
+                        }).toStream()
+                .filter((key, value) -> value.getChanged())
+                .mapValues((readOnlyKey, value) -> {
+                    UserIds userIds = value.getUserIds();
+                    return new UserIds(userIds.getTime(), userIds.getIds());
+                });
+
     }
 
     @StreamListener(Bindings.ALL_LINEAR_ACCELERATION_IN)

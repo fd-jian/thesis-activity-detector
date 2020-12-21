@@ -54,6 +54,13 @@ public class SensorDataHandler {
     @Value("${spring.cloud.stream.bindings.user-ids-in.destination}")
     private String userIdsInDestination;
 
+    /**
+     * Calculates real-time metrics for the Kafka topic that holds all sensors, namely time elapsed in the recording
+     * session and sensor records per second.
+     *
+     * @param sensorDataStream
+     * @return
+     */
     @StreamListener(Bindings.STATS_IN)
     @SendTo(Bindings.STATS_OUT)
     public KStream<String, Stats> process(KStream<String, SensorRecord> sensorDataStream) {
@@ -90,6 +97,12 @@ public class SensorDataHandler {
                 }).mapValues(this::newCountSumTimeAverage).toStream();
     }
 
+    /**
+     * Produces a stream of rounded sensor records to simplify consumers presentation logic.
+     *
+     * @param sensorDataStream
+     * @return
+     */
     @StreamListener(Bindings.LINEAR_ACCELERATION_ROUNDED_IN)
     @SendTo(Bindings.LINEAR_ACCELERATION_ROUNDED_OUT)
     public KStream<String, SensorRecordRounded> processRounded(KStream<String, SensorRecord> sensorDataStream) {
@@ -104,6 +117,26 @@ public class SensorDataHandler {
         });
     }
 
+    /**
+     * <p>
+     * Listens to the Kafka topic that contains records from all sensors to transform it into a stream containing
+     * a snapshots of user IDs from all users. The resulting type of record is named {@link UserIdsStatus}
+     * </p>
+     * <p>
+     * The stream of sensor records must be grouped by a constant value to be able to aggregate on all records. Since
+     * sensor records use the user ID as the key, it must be moved to the value so that grouping by a constant value
+     * does not cause the user ID to be lost.
+     * </p>
+     * <p>
+     * After a stream of {@link UserIdsStatus} records is created, it is grouped and aggregated again to mark those
+     * status objects that hold different IDs than the previous one. This aggregation allows to  subsequently filter
+     * only status records with a changed set of user IDs, which results in a stream that emits a new record every time
+     * a new user was found among the sensor records.
+     * </p>
+     *
+     * @param sensorDataStream Stream holding records from all sensors.
+     * @return Stream that emits  a new record every time a new user was found among sensor records.
+     */
     @StreamListener(Bindings.USER_IDS_IN)
     @SendTo(Bindings.USER_IDS_OUT)
     public KStream<Long, UserIds> userIds(KStream<String, SensorRecord> sensorDataStream) {
@@ -116,18 +149,24 @@ public class SensorDataHandler {
         stringKeyPrimitiveSerde.configure(avroSerdeConfig, true);
 
         return sensorDataStream
+                // SensorRecords have a user id as key. To access user IDs as values, the Stream is mapped so that
+                // the user ID is both key and value of the objects.
                 .mapValues((readOnlyKey, value) -> new UserId(stringKeyPrimitiveSerde.deserializer().deserialize(userIdsInDestination, readOnlyKey.getBytes())))
+                // Group by "0" to put all user ID records into one group
                 .groupBy((key, value) -> 0L, Grouped.with(longKeyPrimitiveSerde, valueSerde))
+                // Aggregate all IDs into a single record, holding a Set of unique user IDs
                 .aggregate(() -> new UserIdsStatus(new UserIds(0L, new ArrayList<>()), false),
                         (key, value, aggregate) -> {
                             UserIds userIds = aggregate.getUserIds();
                             Set<String> strings = new HashSet<>(userIds.getIds());
                             strings.add(value.getId());
                             userIds.setIds(new ArrayList<>(strings));
-                            userIds.setTime(Instant.now().toEpochMilli());
-                            return aggregate;
+                            userIds.setTime(Instant.now().toEpochMilli()); return aggregate;
                 }).toStream()
+                // Key is still "0" for all records, thus all records containing a set of all user IDs will be grouped
+                // together again
                 .groupByKey()
+                // Flag user ID status as changed if the set of ID differs from the previous one.
                 .aggregate(
                         () -> new UserIdsStatus(new UserIds(0L, new ArrayList<>()), true),
                         (key, value, aggregate) -> {
@@ -137,7 +176,9 @@ public class SensorDataHandler {
                            }
                             return value;
                         }).toStream()
+                // Only emit new user ID status records if the set of user IDs changed
                 .filter((key, value) -> value.getChanged())
+                // Get rid of "changed" property as for all remaining records `change = true` applies.
                 .mapValues((readOnlyKey, value) -> {
                     UserIds userIds = value.getUserIds();
                     return new UserIds(userIds.getTime(), userIds.getIds());
@@ -145,24 +186,48 @@ public class SensorDataHandler {
 
     }
 
+    /**
+     * Redirects linear acceleration records to the consolidated topics for all sensor types.
+     *
+     * @param sensorDataStream Stream holding linear acceleration records.
+     * @return Stream holding records linear acceleration records.
+     */
     @StreamListener(Bindings.ALL_LINEAR_ACCELERATION_IN)
     @SendTo(Bindings.ALL_LINEAR_ACCELERATION_OUT)
     public KStream<String, SensorRecord> allLinearAcceleration(KStream<String, SensorRecord> sensorDataStream) {
         return sensorDataStream;
     }
 
+    /**
+     * Redirects accelerometer records to the consolidated topics for all sensor types.
+     *
+     * @param sensorDataStream Stream holding records of accelerometer data.
+     * @return Stream holding records of accelerometer data.
+     */
     @StreamListener(Bindings.ALL_ACCELEROMETER_IN)
     @SendTo(Bindings.ALL_ACCELEROMETER_OUT)
     public KStream<String, SensorRecord> allAccelerometer(KStream<String, SensorRecord> sensorDataStream) {
         return sensorDataStream;
     }
 
+    /**
+     * Redirects gyroscope records to the consolidated topics for all sensor types.
+     *
+     * @param sensorDataStream Stream holding gyroscope records.
+     * @return Stream holding records gyroscope records.
+     */
     @StreamListener(Bindings.ALL_GYROSCOPE_IN)
     @SendTo(Bindings.ALL_GYROSCOPE_OUT)
     public KStream<String, SensorRecord> allGyroscope(KStream<String, SensorRecord> sensorDataStream) {
         return sensorDataStream;
     }
 
+    /**
+     * Redirects light records to the consolidated topics for all sensor types.
+     *
+     * @param sensorDataStream Stream holding light records.
+     * @return Stream holding records light records.
+     */
     @StreamListener(Bindings.ALL_LIGHT_IN)
     @SendTo(Bindings.ALL_LIGHT_OUT)
     public KStream<String, SensorRecord> allLight(KStream<String, SensorRecord> sensorDataStream) {
